@@ -1,0 +1,2250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gantt Editor - Interaktiver Projektplaner</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --success: #16a34a;
+      --border: #e5e7eb;
+      --bg-light: #f9fafb;
+      --text: #1f2937;
+      --text-light: #6b7280;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: var(--bg-light);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* HEADER */
+    header {
+      background: white;
+      border-bottom: 2px solid var(--border);
+      padding: 16px 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    header h1 {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      color: var(--primary);
+    }
+    
+    header p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-light);
+    }
+    
+    /* MAIN LAYOUT */
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    /* SIDEBAR */
+    .sidebar {
+      width: 400px;
+      background: white;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-light);
+    }
+    
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    
+    /* BUTTONS */
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: var(--danger-hover);
+    }
+    
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+    
+    .btn-small {
+      padding: 4px 12px;
+      font-size: 12px;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    /* FORM */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+    }
+    
+    /* TASK LIST */
+    .task-item {
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+      cursor: grab;
+      transition: all 0.2s;
+      user-select: none;
+      position: relative;
+    }
+    
+    .task-item:active {
+      cursor: grabbing;
+    }
+    
+    .task-item.dragging {
+      opacity: 0.4;
+      background: #e0e7ff;
+    }
+    
+    .task-item.drag-over-top::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+      box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+      z-index: 3;
+    }
+    
+    .task-item.drag-over-bottom::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+      box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+      z-index: 3;
+    }
+    
+    .drop-indicator {
+      height: 6px;
+      margin: 6px 0;
+      border-radius: 3px;
+      background: var(--primary);
+      box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+      opacity: 0;
+      transition: opacity 0.12s ease;
+    }
+    
+    .drop-indicator.visible {
+      opacity: 1;
+    }
+    
+    .task-item:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .task-item.active {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+    
+    .task-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 8px;
+    }
+    
+    .task-item-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      flex: 1;
+    }
+    
+    .task-item-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    
+    .task-order-btn {
+      width: 24px;
+      height: 24px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: all 0.2s;
+      padding: 0;
+    }
+    
+    .task-order-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    .task-order-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    .task-order-btn:disabled:hover {
+      background: white;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    
+    .task-item-info {
+      font-size: 12px;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+    
+    .task-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-right: 6px;
+    }
+    
+    .task-badge.milestone {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .task-badge.task {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
+    /* CHART AREA */
+    .chart-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0; /* Important for flexbox scrolling */
+    }
+    
+    .chart-controls {
+      padding: 12px 16px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .zoom-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+    
+    @media (max-width: 768px) {
+      .zoom-controls {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+    
+    .zoom-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg-light);
+    }
+    
+    .zoom-label-text {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+    }
+    
+    .zoom-btn {
+      padding: 2px 8px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    
+    .zoom-btn:hover {
+      background: var(--bg-light);
+      border-color: var(--primary);
+    }
+    
+    .zoom-value {
+      font-size: 11px;
+      min-width: 45px;
+      text-align: center;
+      color: var(--text);
+    }
+    
+    .chart-container {
+      flex: 1;
+      overflow: auto;
+      padding: 16px;
+      background: var(--bg-light);
+      min-height: 500px;
+    }
+    
+    @media (max-width: 768px) {
+      .chart-container {
+        padding: 8px;
+      }
+    }
+    
+    #gantt-chart {
+      width: 100%;
+      height: 100%;
+      min-height: 400px;
+    }
+    
+    /* ANALYSIS IN SIDEBAR */
+    #analysis-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .analysis-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .analysis-card {
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    
+    .analysis-card h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .analysis-stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .analysis-stat:last-child {
+      border-bottom: none;
+    }
+    
+    .analysis-stat-label {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+    
+    .analysis-stat-value {
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .interruptions-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .interruption-item {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    
+    .interruption-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .interruption-header {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    
+    .interruption-details {
+      font-size: 13px;
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .interruption-duration {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    
+    .group-stats {
+      margin-top: 20px;
+    }
+    
+    .group-item {
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    
+    .group-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .group-header {
+      font-weight: 600;
+      color: var(--primary);
+      font-size: 15px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+    }
+    
+    .group-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    
+    .group-stat-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+    
+    .group-stat-label {
+      color: var(--text-light);
+    }
+    
+    .group-stat-value {
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    /* MODAL */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .modal-header h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+    
+    .modal-close {
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-light);
+      background: none;
+      border: none;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-close:hover {
+      color: var(--text);
+    }
+    
+    /* SEARCH BOX */
+    .search-box {
+      margin-bottom: 12px;
+    }
+    
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px 8px 36px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="gray"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: 10px center;
+    }
+    
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 16px;
+    }
+    
+    .tab {
+      padding: 10px 20px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-light);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+    
+    .tab:hover {
+      color: var(--text);
+    }
+    
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* ALERTS */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    
+    .alert-info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+    
+    .alert-warning {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde047;
+    }
+    
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-light);
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .empty-state h3 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: var(--text);
+    }
+    
+    .empty-state p {
+      margin: 0 0 20px 0;
+      font-size: 14px;
+    }
+    
+    /* SCROLLBAR */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--bg-light);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📊 Gantt Editor - Interaktiver Projektplaner</h1>
+    <p>Erstellen, bearbeiten und visualisieren Sie Ihre Projekte mit Arbeitstagen und Feiertagen</p>
+  </header>
+  
+  <div class="main-container">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="tabs">
+          <button class="tab active" data-tab="tasks">Aufgaben</button>
+          <button class="tab" data-tab="analysis">Analyse</button>
+          <button class="tab" data-tab="config">Konfiguration</button>
+        </div>
+      </div>
+      
+      <div class="sidebar-content">
+        <!-- TASKS TAB -->
+        <div class="tab-content active" id="tab-tasks">
+          <div class="btn-group">
+            <button class="btn btn-primary" id="add-task-btn">+ Aufgabe</button>
+            <button class="btn btn-primary" id="add-milestone-btn">★ Meilenstein</button>
+          </div>
+          
+          <div class="search-box">
+            <input type="text" id="search-tasks" placeholder="🔍 Aufgaben suchen...">
+          </div>
+          
+          <div id="tasks-list"></div>
+          
+          <div class="empty-state" id="empty-state" style="display: none;">
+            <div class="empty-state-icon">📋</div>
+            <h3>Keine Aufgaben</h3>
+            <p>Beginnen Sie mit dem Hinzufügen von Aufgaben oder Meilensteinen</p>
+          </div>
+        </div>
+        
+        <!-- CONFIG TAB -->
+        <div class="tab-content" id="tab-config">
+          <div class="form-group">
+            <label>Projekttitel</label>
+            <input type="text" id="project-title" value="Mein Projekt">
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="count-work-days" checked>
+            <label for="count-work-days">Nur Arbeitstage zählen (Mo-Fr, ohne bundesweite Feiertage)</label>
+          </div>
+          
+          <div class="alert alert-info">
+            <strong>ℹ️ Hinweis:</strong> Bei aktivierter Option werden nur Arbeitstage (Montag-Freitag) gezählt, unter Ausschluss der bundesweiten Feiertage in Deutschland (Neujahr, Karfreitag, Ostermontag, Tag der Arbeit, Christi Himmelfahrt, Pfingstmontag, Tag der Deutschen Einheit, 1. und 2. Weihnachtsfeiertag). Bundeslandspezifische Feiertage werden nicht berücksichtigt.
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="show-text-on-bars" checked>
+            <label for="show-text-on-bars">Text auf Balken anzeigen</label>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn btn-primary" id="load-json-btn">📁 JSON laden</button>
+            <button class="btn btn-success" id="save-json-btn">💾 JSON speichern</button>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn btn-primary" id="export-pdf-btn">📄 Als PDF exportieren</button>
+          </div>
+          
+          <div class="alert alert-info">
+            <strong>💡 Tastenkürzel:</strong><br>
+            <strong>Ctrl+S</strong> - JSON speichern | 
+            <strong>Ctrl+O</strong> - JSON laden | 
+            <strong>Ctrl+N</strong> - Neue Aufgabe | 
+            <strong>Ctrl+G</strong> - Diagramm generieren | 
+            <strong>Esc</strong> - Modal schließen
+          </div>
+          
+          <div class="alert alert-info">
+            <strong>🎯 Tipp:</strong> Verwenden Sie Drag & Drop, um Aufgaben in der Liste neu zu ordnen.
+          </div>
+        </div>
+        
+        <!-- ANALYSIS TAB -->
+        <div class="tab-content" id="tab-analysis">
+          <div class="alert alert-info">
+            <strong>ℹ️ Hinweis:</strong> Die Analyse wird automatisch generiert, wenn Sie auf "Diagramm generieren" klicken.
+          </div>
+          
+          <div id="analysis-content">
+            <div class="empty-state">
+              <div class="empty-state-icon">📊</div>
+              <h3>Keine Analyse verfügbar</h3>
+              <p>Generieren Sie zuerst ein Gantt-Diagramm</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- CHART AREA -->
+    <div class="chart-area">
+      <div class="chart-controls">
+        <button class="btn btn-primary" id="generate-chart-btn">🎨 Diagramm generieren</button>
+        
+        <div class="zoom-controls">
+          <div class="zoom-group">
+            <span class="zoom-label-text">H</span>
+            <button class="zoom-btn" id="zoom-h-out">−</button>
+            <span class="zoom-value" id="zoom-h-level">100%</span>
+            <button class="zoom-btn" id="zoom-h-in">+</button>
+          </div>
+          <div class="zoom-group">
+            <span class="zoom-label-text">V</span>
+            <button class="zoom-btn" id="zoom-v-out">−</button>
+            <span class="zoom-value" id="zoom-v-level">100%</span>
+            <button class="zoom-btn" id="zoom-v-in">+</button>
+          </div>
+          <button class="zoom-btn" id="zoom-reset">⟲</button>
+        </div>
+      </div>
+      
+      <div class="chart-container">
+        <div id="gantt-chart"></div>
+        <div class="empty-state" id="chart-empty-state">
+          <div class="empty-state-icon">📈</div>
+          <h3>Kein Diagramm</h3>
+          <p>Fügen Sie Aufgaben hinzu und klicken Sie auf "Diagramm generieren"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- TASK EDITOR MODAL -->
+  <div class="modal" id="task-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Aufgabe bearbeiten</h2>
+        <button class="modal-close" id="modal-close">×</button>
+      </div>
+      
+      <form id="task-form">
+        <input type="hidden" id="task-index">
+        
+        <div class="form-group">
+          <label>Typ</label>
+          <select id="task-type">
+            <option value="task">Aufgabe</option>
+            <option value="milestone">Meilenstein</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Gruppe</label>
+          <input type="text" id="task-group" placeholder="z.B. Phase 1" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Aufgabenname</label>
+          <input type="text" id="task-name" placeholder="z.B. Planung" required>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Startdatum</label>
+            <input type="date" id="task-start" required>
+          </div>
+          <div class="form-group">
+            <label>Enddatum</label>
+            <input type="date" id="task-end" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Dauer in Tagen</label>
+            <input type="number" id="task-days" placeholder="Auto" min="1">
+          </div>
+          <div class="form-group">
+            <label>Dauer in Wochen</label>
+            <input type="number" id="task-weeks" placeholder="Auto" min="0" step="0.1">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Geplante Dauer (optional)</label>
+          <input type="text" id="task-duration" placeholder="z.B. 10 AT, 2 Wochen">
+        </div>
+        
+        <div class="form-group">
+          <label>Tonnage (optional)</label>
+          <input type="number" id="task-tonnage" placeholder="Tonnage in Tonnen">
+        </div>
+        
+        <div class="form-group">
+          <label>Text auf Balken (optional)</label>
+          <textarea id="task-text" placeholder="Zusätzlicher Text für Balken"></textarea>
+        </div>
+        
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">💾 Speichern</button>
+          <button type="button" class="btn btn-secondary" id="duplicate-btn" style="display: none;">📋 Duplizieren</button>
+          <button type="button" class="btn btn-secondary" id="cancel-btn">Abbrechen</button>
+          <button type="button" class="btn btn-danger" id="delete-btn" style="margin-left: auto; display: none;">🗑️ Löschen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- FILE INPUT (hidden) -->
+  <input type="file" id="file-input" accept=".json" style="display: none;">
+
+  <script>
+    // ==================== STATE ====================
+    let tasks = [];
+    let currentEditIndex = -1;
+    let zoomH = 1.0;
+    let zoomV = 1.0;
+    let currentChart = null;
+    let originalChartWidth = 0;
+    let originalChartHeight = 0;
+    let draggedIndex = -1;
+    let currentDropTarget = null;
+    let dropIndicator = null;
+    let hasUnsavedChanges = false;
+    
+    // ==================== INITIALIZATION ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeApp();
+      // No load sample data - user must load from JSON
+      renderTasksList();
+      updateEmptyStates();
+      
+      // Warning before unload if there's a generated chart
+      window.addEventListener('beforeunload', (e) => {
+        if (currentChart !== null) {
+          e.preventDefault();
+          e.returnValue = 'Sie haben ein generiertes Diagramm. Ungespeicherte Änderungen gehen verloren.';
+          return e.returnValue;
+        }
+      });
+    });
+    
+    function initializeApp() {
+      // Tab switching
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+      });
+      
+      // Task buttons
+      document.getElementById('add-task-btn').addEventListener('click', () => openTaskModal('task'));
+      document.getElementById('add-milestone-btn').addEventListener('click', () => openTaskModal('milestone'));
+      
+      // Search
+      document.getElementById('search-tasks').addEventListener('input', filterTasks);
+      
+      // Modal
+      document.getElementById('modal-close').addEventListener('click', closeModal);
+      document.getElementById('cancel-btn').addEventListener('click', closeModal);
+      document.getElementById('task-form').addEventListener('submit', saveTask);
+      document.getElementById('delete-btn').addEventListener('click', deleteTask);
+      document.getElementById('duplicate-btn').addEventListener('click', duplicateTask);
+      
+      // Date/Duration calculations
+      document.getElementById('task-start').addEventListener('change', calculateDuration);
+      document.getElementById('task-end').addEventListener('change', calculateDuration);
+      document.getElementById('task-days').addEventListener('input', calculateEndFromDays);
+      
+      // Work days checkbox - recalculate when changed
+      document.getElementById('count-work-days').addEventListener('change', () => {
+        // If modal is open, recalculate duration
+        if (document.getElementById('task-modal').classList.contains('active')) {
+          calculateDuration();
+        }
+      });
+      
+      // Chart controls
+      document.getElementById('generate-chart-btn').addEventListener('click', generateChart);
+      document.getElementById('zoom-h-in').addEventListener('click', () => adjustZoom('h', 0.2));
+      document.getElementById('zoom-h-out').addEventListener('click', () => adjustZoom('h', -0.2));
+      document.getElementById('zoom-v-in').addEventListener('click', () => adjustZoom('v', 0.2));
+      document.getElementById('zoom-v-out').addEventListener('click', () => adjustZoom('v', -0.2));
+      document.getElementById('zoom-reset').addEventListener('click', resetZoom);
+      
+      // JSON
+      document.getElementById('load-json-btn').addEventListener('click', loadJSON);
+      document.getElementById('save-json-btn').addEventListener('click', saveJSON);
+      document.getElementById('file-input').addEventListener('change', handleFileSelect);
+      
+      // Export PDF
+      document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
+      
+      // Keyboard shortcuts
+      document.addEventListener('keydown', handleKeyboardShortcuts);
+    }
+    
+    // ==================== TAB MANAGEMENT ====================
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+      
+      document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+    }
+    
+    // ==================== MODAL MANAGEMENT ====================
+    function openTaskModal(type = 'task', index = -1) {
+      currentEditIndex = index;
+      const modal = document.getElementById('task-modal');
+      const form = document.getElementById('task-form');
+      const title = document.getElementById('modal-title');
+      const deleteBtn = document.getElementById('delete-btn');
+      const duplicateBtn = document.getElementById('duplicate-btn');
+      
+      form.reset();
+      
+      if (index >= 0) {
+        // Edit existing task
+        const task = tasks[index];
+        title.textContent = 'Aufgabe bearbeiten';
+        document.getElementById('task-index').value = index;
+        document.getElementById('task-type').value = task.type;
+        document.getElementById('task-group').value = task.group;
+        document.getElementById('task-name').value = task.name;
+        document.getElementById('task-start').value = task.start;
+        document.getElementById('task-end').value = task.end;
+        document.getElementById('task-duration').value = task.duration || '';
+        document.getElementById('task-tonnage').value = task.tonnage || '';
+        document.getElementById('task-text').value = task.text || '';
+        deleteBtn.style.display = 'block';
+        duplicateBtn.style.display = 'block';
+        
+        // Calculate and show days/weeks
+        calculateDuration();
+      } else {
+        // New task
+        title.textContent = type === 'milestone' ? 'Neuer Meilenstein' : 'Neue Aufgabe';
+        document.getElementById('task-type').value = type;
+        deleteBtn.style.display = 'none';
+        duplicateBtn.style.display = 'none';
+        
+        // Set default dates (today and tomorrow)
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        document.getElementById('task-start').value = today;
+        document.getElementById('task-end').value = type === 'milestone' ? today : tomorrow;
+        
+        // Calculate initial duration
+        calculateDuration();
+      }
+      
+      modal.classList.add('active');
+    }
+    
+    // ==================== DATE/DURATION CALCULATIONS ====================
+    
+    // German national holidays (fixed dates only)
+    function getGermanNationalHolidays(year) {
+      const holidays = [
+        new Date(year, 0, 1),   // Neujahr
+        new Date(year, 4, 1),   // Tag der Arbeit
+        new Date(year, 9, 3),   // Tag der Deutschen Einheit
+        new Date(year, 11, 25), // 1. Weihnachtsfeiertag
+        new Date(year, 11, 26)  // 2. Weihnachtsfeiertag
+      ];
+      
+      // Add movable holidays (Easter-based)
+      const easter = calculateEaster(year);
+      holidays.push(
+        new Date(easter.getTime() - 2 * 24 * 60 * 60 * 1000), // Karfreitag (Good Friday)
+        new Date(easter.getTime() + 1 * 24 * 60 * 60 * 1000), // Ostermontag (Easter Monday)
+        new Date(easter.getTime() + 39 * 24 * 60 * 60 * 1000), // Christi Himmelfahrt (Ascension)
+        new Date(easter.getTime() + 50 * 24 * 60 * 60 * 1000)  // Pfingstmontag (Whit Monday)
+      );
+      
+      return holidays;
+    }
+    
+    // Calculate Easter Sunday using Computus algorithm
+    function calculateEaster(year) {
+      const a = year % 19;
+      const b = Math.floor(year / 100);
+      const c = year % 100;
+      const d = Math.floor(b / 4);
+      const e = b % 4;
+      const f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3);
+      const h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4);
+      const k = c % 4;
+      const l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const month = Math.floor((h + l - 7 * m + 114) / 31) - 1; // 0-indexed
+      const day = ((h + l - 7 * m + 114) % 31) + 1;
+      return new Date(year, month, day);
+    }
+    
+    function isGermanNationalHoliday(date) {
+      const year = date.getFullYear();
+      const holidays = getGermanNationalHolidays(year);
+      const dateStr = date.toISOString().split('T')[0];
+      return holidays.some(h => h.toISOString().split('T')[0] === dateStr);
+    }
+    
+    function isWorkDay(date) {
+      const day = date.getDay();
+      // Check if it's a weekend
+      if (day === 0 || day === 6) return false;
+      // Check if it's a national holiday
+      if (isGermanNationalHoliday(date)) return false;
+      return true;
+    }
+    
+    function countWorkDays(startDate, endDate) {
+      let count = 0;
+      let current = new Date(startDate);
+      while (current <= endDate) {
+        if (isWorkDay(current)) {
+          count++;
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      return count;
+    }
+    
+    function addWorkDays(startDate, workDays) {
+      let current = new Date(startDate);
+      let added = 0;
+      
+      // If start date is a work day, count it
+      if (isWorkDay(current)) {
+        added = 1;
+      }
+      
+      while (added < workDays) {
+        current.setDate(current.getDate() + 1);
+        if (isWorkDay(current)) {
+          added++;
+        }
+      }
+      
+      return current;
+    }
+    
+    function calculateDuration() {
+      const startInput = document.getElementById('task-start');
+      const endInput = document.getElementById('task-end');
+      const daysInput = document.getElementById('task-days');
+      const weeksInput = document.getElementById('task-weeks');
+      const countWorkDaysCheckbox = document.getElementById('count-work-days');
+      
+      if (!startInput.value || !endInput.value) return;
+      
+      const startDate = new Date(startInput.value);
+      const endDate = new Date(endInput.value);
+      
+      let diffDays;
+      
+      if (countWorkDaysCheckbox && countWorkDaysCheckbox.checked) {
+        // Calculate work days only (Mon-Fri, excluding national holidays)
+        diffDays = countWorkDays(startDate, endDate);
+      } else {
+        // Calculate calendar days (inclusive)
+        const diffTime = endDate - startDate;
+        diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      }
+      
+      if (diffDays > 0) {
+        daysInput.value = diffDays;
+        weeksInput.value = (diffDays / 5).toFixed(1); // Work weeks (5 days)
+      }
+    }
+    
+    function calculateEndFromDays() {
+      const startInput = document.getElementById('task-start');
+      const endInput = document.getElementById('task-end');
+      const daysInput = document.getElementById('task-days');
+      const weeksInput = document.getElementById('task-weeks');
+      const countWorkDaysCheckbox = document.getElementById('count-work-days');
+      
+      if (!startInput.value || !daysInput.value) return;
+      
+      const days = parseInt(daysInput.value);
+      if (days < 1) return;
+      
+      const startDate = new Date(startInput.value);
+      let endDate;
+      
+      if (countWorkDaysCheckbox && countWorkDaysCheckbox.checked) {
+        // Add work days only
+        endDate = addWorkDays(startDate, days);
+      } else {
+        // Add calendar days
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + days - 1); // -1 because start day is included
+      }
+      
+      // Format as YYYY-MM-DD
+      const endDateStr = endDate.toISOString().split('T')[0];
+      endInput.value = endDateStr;
+      
+      // Update weeks
+      weeksInput.value = (days / 5).toFixed(1);
+    }
+    
+    function closeModal() {
+      document.getElementById('task-modal').classList.remove('active');
+      currentEditIndex = -1;
+    }
+    
+    // ==================== TASK MANAGEMENT ====================
+    function saveTask(e) {
+      e.preventDefault();
+      
+      const task = {
+        type: document.getElementById('task-type').value,
+        group: document.getElementById('task-group').value,
+        name: document.getElementById('task-name').value,
+        start: document.getElementById('task-start').value,
+        end: document.getElementById('task-end').value,
+        duration: document.getElementById('task-duration').value,
+        tonnage: document.getElementById('task-tonnage').value,
+        text: document.getElementById('task-text').value
+      };
+      
+      // Validate dates
+      if (new Date(task.start) > new Date(task.end)) {
+        alert('⚠️ Das Enddatum muss nach dem Startdatum liegen!');
+        return;
+      }
+      
+      // Calculate days info
+      const startDate = new Date(task.start);
+      const endDate = new Date(task.end);
+      const diffTime = Math.abs(endDate - startDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      
+      // Auto-calculate work days (excluding weekends, not holidays)
+      let workDays = 0;
+      let current = new Date(startDate);
+      while (current <= endDate) {
+        const day = current.getDay();
+        if (day !== 0 && day !== 6) { // Not Sunday or Saturday
+          workDays++;
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      
+      // Add info to duration if empty
+      if (!task.duration && task.type === 'task') {
+        task.duration = `~${workDays} AT (${diffDays} KT)`;
+      }
+      
+      if (currentEditIndex >= 0) {
+        tasks[currentEditIndex] = task;
+      } else {
+        tasks.push(task);
+      }
+      
+      renderTasksList();
+      updateEmptyStates();
+      closeModal();
+    }
+    
+    function deleteTask() {
+      if (currentEditIndex >= 0 && confirm('Möchten Sie diese Aufgabe wirklich löschen?')) {
+        tasks.splice(currentEditIndex, 1);
+        renderTasksList();
+        updateEmptyStates();
+        closeModal();
+      }
+    }
+    
+    function duplicateTask() {
+      if (currentEditIndex >= 0) {
+        const task = tasks[currentEditIndex];
+        const duplicated = {
+          ...task,
+          name: task.name + ' (Kopie)'
+        };
+        tasks.splice(currentEditIndex + 1, 0, duplicated);
+        renderTasksList();
+        closeModal();
+      }
+    }
+    
+    function renderTasksList() {
+      const container = document.getElementById('tasks-list');
+      
+      if (tasks.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      container.innerHTML = tasks.map((task, index) => `
+        <div class="task-item" 
+             draggable="true"
+             ondragstart="handleDragStart(event, ${index})"
+             ondragover="handleDragOver(event); return false;"
+             ondragenter="handleDragOver(event); return false;"
+             ondragleave="handleDragLeave(event)"
+             ondrop="handleDrop(event, ${index}); return false;"
+             ondragend="handleDragEnd(event)"
+             data-index="${index}">
+          <div class="task-item-header">
+            <div class="task-item-title" onclick="if(!window.isDragging) openTaskModal('${task.type}', ${index})" style="cursor: pointer; pointer-events: auto;">
+              <span class="task-badge ${task.type}" style="pointer-events: none;">${task.type === 'milestone' ? '★' : '📋'}</span>
+              ${task.name}
+            </div>
+            <div class="task-item-actions" style="pointer-events: auto;">
+              <button class="task-order-btn" onclick="moveTask(${index}, -1); event.stopPropagation();" 
+                      ${index === 0 ? 'disabled' : ''} title="Nach oben" style="pointer-events: auto;">▲</button>
+              <button class="task-order-btn" onclick="moveTask(${index}, 1); event.stopPropagation();" 
+                      ${index === tasks.length - 1 ? 'disabled' : ''} title="Nach unten" style="pointer-events: auto;">▼</button>
+            </div>
+          </div>
+          <div class="task-item-info" onclick="if(!window.isDragging) openTaskModal('${task.type}', ${index})" style="cursor: pointer; pointer-events: auto;">
+            <strong>${task.group}</strong><br>
+            📅 ${formatDate(task.start)} → ${formatDate(task.end)}
+            ${task.duration ? `<br>⏱ ${task.duration}` : ''}
+            ${task.tonnage ? `<br>⚖ ${task.tonnage} t` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function moveTask(index, direction) {
+      const newIndex = index + direction;
+      
+      // Validar límites
+      if (newIndex < 0 || newIndex >= tasks.length) {
+        return;
+      }
+      
+      // Intercambiar tareas
+      const temp = tasks[index];
+      tasks[index] = tasks[newIndex];
+      tasks[newIndex] = temp;
+      
+      // Re-renderizar
+      renderTasksList();
+    }
+    
+    // ==================== DRAG & DROP ====================
+    let dragSrcEl = null;
+    window.isDragging = false;
+    
+    function ensureDropIndicator() {
+      if (!dropIndicator) {
+        dropIndicator = document.createElement('div');
+        dropIndicator.className = 'drop-indicator';
+      }
+      return dropIndicator;
+    }
+    
+    function removeDropIndicator() {
+      if (dropIndicator && dropIndicator.parentNode) {
+        dropIndicator.parentNode.removeChild(dropIndicator);
+        dropIndicator.classList.remove('visible');
+      }
+      if (currentDropTarget) {
+        currentDropTarget.classList.remove('drag-over-top', 'drag-over-bottom');
+        currentDropTarget = null;
+      }
+    }
+    
+    function showDropIndicator(target, placeBefore) {
+      const list = document.getElementById('tasks-list');
+      if (!list || !target) {
+        return;
+      }
+      
+      const indicator = ensureDropIndicator();
+      
+      if (currentDropTarget && currentDropTarget !== target) {
+        currentDropTarget.classList.remove('drag-over-top', 'drag-over-bottom');
+      }
+      
+      currentDropTarget = target;
+      target.classList.toggle('drag-over-top', placeBefore);
+      target.classList.toggle('drag-over-bottom', !placeBefore);
+      
+      const referenceNode = placeBefore ? target : target.nextElementSibling;
+      if (referenceNode) {
+        list.insertBefore(indicator, referenceNode);
+      } else {
+        list.appendChild(indicator);
+      }
+      
+      indicator.classList.add('visible');
+    }
+    
+    function handleDragStart(e, index) {
+      window.isDragging = true;
+      draggedIndex = index;
+      dragSrcEl = e.currentTarget;
+      removeDropIndicator();
+      
+      e.currentTarget.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', index);
+    }
+    
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      
+      const target = e.currentTarget;
+      if (target === dragSrcEl) {
+        removeDropIndicator();
+        return;
+      }
+      
+      // Determinar si mostrar línea arriba o abajo
+      const rect = target.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      const showTop = e.clientY < midpoint;
+      showDropIndicator(target, showTop);
+      
+      return false;
+    }
+    
+    function handleDragLeave(e) {
+      const target = e.currentTarget;
+      const nextElement = document.elementFromPoint(e.clientX, e.clientY);
+      
+      if (nextElement && (target.contains(nextElement) || nextElement === dropIndicator)) {
+        return;
+      }
+      
+      if (currentDropTarget === target) {
+        target.classList.remove('drag-over-top', 'drag-over-bottom');
+        currentDropTarget = null;
+      }
+      
+      if (!nextElement || !nextElement.closest('.task-item')) {
+        removeDropIndicator();
+      }
+    }
+    
+    function handleDrop(e, dropIndex) {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const list = document.getElementById('tasks-list');
+      let insertIndex = -1;
+      
+      if (dropIndicator && list && list.contains(dropIndicator)) {
+        insertIndex = 0;
+        const children = Array.from(list.children);
+        for (const child of children) {
+          if (child === dropIndicator) {
+            break;
+          }
+          if (child.classList && child.classList.contains('task-item')) {
+            insertIndex++;
+          }
+        }
+      } else {
+        // Fallback: usar cálculo basado en posición del mouse
+        insertIndex = dropIndex;
+        const target = e.currentTarget;
+        const rect = target.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        if (e.clientY >= midpoint) {
+          insertIndex = dropIndex + 1;
+        }
+      }
+      
+      if (draggedIndex === -1 || insertIndex === -1) {
+        removeDropIndicator();
+        return false;
+      }
+      
+      if (draggedIndex < insertIndex) {
+        insertIndex--;
+      }
+      
+      if (insertIndex === draggedIndex) {
+        removeDropIndicator();
+        return false;
+      }
+      
+      const draggedTask = tasks[draggedIndex];
+      tasks.splice(draggedIndex, 1);
+      tasks.splice(insertIndex, 0, draggedTask);
+      
+      removeDropIndicator();
+      renderTasksList();
+      
+      return false;
+    }
+    
+    function handleDragEnd(e) {
+      e.currentTarget.classList.remove('dragging');
+      document.querySelectorAll('.task-item').forEach(item => {
+        item.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+      removeDropIndicator();
+      draggedIndex = -1;
+      dragSrcEl = null;
+      
+      // Delay para permitir que termine el evento drag antes de permitir clicks
+      setTimeout(() => {
+        window.isDragging = false;
+      }, 100);
+    }
+    
+    // ==================== SEARCH/FILTER ====================
+    function filterTasks() {
+      const search = document.getElementById('search-tasks').value.toLowerCase();
+      const items = document.querySelectorAll('.task-item');
+      
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(search)) {
+          item.style.display = '';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+    
+    // ==================== KEYBOARD SHORTCUTS ====================
+    function handleKeyboardShortcuts(e) {
+      // Ctrl/Cmd + S: Save JSON
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveJSON();
+      }
+      
+      // Ctrl/Cmd + O: Load JSON
+      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+        e.preventDefault();
+        loadJSON();
+      }
+      
+      // Ctrl/Cmd + N: New task
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        openTaskModal('task');
+      }
+      
+      // Ctrl/Cmd + G: Generate chart
+      if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+        e.preventDefault();
+        generateChart();
+      }
+      
+      // Escape: Close modal
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    }
+    
+    function updateEmptyStates() {
+      document.getElementById('empty-state').style.display = tasks.length === 0 ? 'block' : 'none';
+    }
+    
+    // ==================== CHART GENERATION ====================
+    function generateChart() {
+      if (tasks.length === 0) {
+        alert('Bitte fügen Sie mindestens eine Aufgabe hinzu.');
+        return;
+      }
+      
+      const regularTasks = tasks.filter(t => t.type === 'task');
+      const milestones = tasks.filter(t => t.type === 'milestone');
+      
+      const traces = [];
+      
+      // Group tasks by group
+      const groups = [...new Set(tasks.map(t => t.group))];
+      const colors = generateColors(groups.length);
+      
+      groups.forEach((group, idx) => {
+        const groupTasks = regularTasks.filter(t => t.group === group);
+        
+        if (groupTasks.length > 0) {
+          traces.push({
+            type: 'bar',
+            orientation: 'h',
+            name: group,
+            x: groupTasks.map(t => {
+              const start = new Date(t.start);
+              const end = new Date(t.end);
+              return end - start;
+            }),
+            y: groupTasks.map(t => t.name),
+            base: groupTasks.map(t => new Date(t.start)),
+            marker: { 
+              color: colors[idx],
+              line: {
+                color: '#fff',
+                width: 2
+              }
+            },
+            text: groupTasks.map(t => {
+              const parts = [];
+              if (t.text) parts.push(t.text);
+              parts.push(`${formatDate(t.start)} → ${formatDate(t.end)}`);
+              if (t.duration) parts.push(t.duration);
+              return parts.join('<br>');
+            }),
+            textposition: document.getElementById('show-text-on-bars').checked ? 'inside' : 'none',
+            hovertemplate: '<b>%{y}</b><br>' +
+                          'Gruppe: ' + group + '<br>' +
+                          'Start: %{base|%d.%m.%Y}<br>' +
+                          'Ende: %{customdata}<br>' +
+                          '<extra></extra>',
+            customdata: groupTasks.map(t => formatDate(t.end))
+          });
+        }
+      });
+      
+      // Add milestones
+      if (milestones.length > 0) {
+        traces.push({
+          type: 'scatter',
+          mode: 'markers+text',
+          name: 'Meilensteine',
+          x: milestones.map(t => new Date(t.start)),
+          y: milestones.map(t => `★ ${t.name}`),
+          marker: {
+            symbol: 'diamond',
+            size: 12,
+            color: '#fbbf24'
+          },
+          text: milestones.map(t => t.name),
+          textposition: 'top center',
+          hovertemplate: '<b>%{text}</b><br>Datum: %{x|%d.%m.%Y}<extra></extra>'
+        });
+      }
+      
+      // Layout
+      const layout = {
+        title: document.getElementById('project-title').value,
+        xaxis: {
+          type: 'date',
+          title: 'Datum',
+          rangeslider: { visible: true },
+          showgrid: true,
+          gridcolor: '#e5e7eb',
+          gridwidth: 1
+        },
+        yaxis: {
+          autorange: 'reversed',
+          title: '',
+          showgrid: true,
+          gridcolor: '#f3f4f6'
+        },
+        hoverlabel: {
+          bgcolor: '#1f2937',
+          font: {
+            size: 14,
+            color: '#fff',
+            family: 'system-ui, -apple-system, sans-serif'
+          },
+          bordercolor: '#374151'
+        },
+        legend: {
+          orientation: 'h',
+          yanchor: 'bottom',
+          y: 1.02,
+          xanchor: 'right',
+          x: 1
+        },
+        margin: { l: 150, r: 20, t: 80, b: 40 },
+        height: Math.max(500, tasks.length * 30)
+      };
+      
+      const config = {
+        responsive: true,
+        displayModeBar: true,
+        displaylogo: false
+      };
+      
+      currentChart = { traces, layout, config };
+      
+      // Store original dimensions before any zoom
+      const container = document.querySelector('.chart-container');
+      originalChartWidth = container.clientWidth;
+      originalChartHeight = layout.height;
+      
+      Plotly.newPlot('gantt-chart', traces, layout, config);
+      document.getElementById('chart-empty-state').style.display = 'none';
+      
+      // Reset zoom when generating new chart
+      zoomH = 1.0;
+      zoomV = 1.0;
+      applyZoom();
+      
+      // Generate analysis
+      generateAnalysis();
+    }
+    
+    // ==================== PROJECT ANALYSIS ====================
+    function generateAnalysis() {
+      // Get analysis content container in sidebar
+      const analysisContent = document.getElementById('analysis-content');
+      
+      // Filter only tasks (not milestones)
+      const regularTasks = tasks.filter(t => t.type === 'task');
+      const milestones = tasks.filter(t => t.type === 'milestone');
+      
+      if (regularTasks.length === 0) {
+        analysisContent.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h3>Keine Aufgaben</h3>
+            <p>Fügen Sie Aufgaben hinzu, um eine Analyse zu sehen</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Sort tasks by start date
+      const sortedTasks = [...regularTasks].sort((a, b) => 
+        new Date(a.start) - new Date(b.start)
+      );
+      
+      // Calculate work time
+      const useWorkDaysOnly = document.getElementById('count-work-days').checked;
+      let totalWorkDays = 0;
+      
+      sortedTasks.forEach(task => {
+        const start = new Date(task.start);
+        const end = new Date(task.end);
+        
+        if (useWorkDaysOnly) {
+          totalWorkDays += countWorkDaysFunc(start, end);
+        } else {
+          const diffTime = end - start;
+          totalWorkDays += Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        }
+      });
+      
+      // Find interruptions
+      const interruptions = [];
+      for (let i = 0; i < sortedTasks.length - 1; i++) {
+        const currentEnd = new Date(sortedTasks[i].end);
+        const nextStart = new Date(sortedTasks[i + 1].start);
+        
+        // Add one day to current end to get the first day of gap
+        const gapStart = new Date(currentEnd);
+        gapStart.setDate(gapStart.getDate() + 1);
+        
+        // Subtract one day from next start to get the last day of gap
+        const gapEnd = new Date(nextStart);
+        gapEnd.setDate(gapEnd.getDate() - 1);
+        
+        // Check if there's actually a gap
+        if (gapStart <= gapEnd) {
+          let gapDays;
+          if (useWorkDaysOnly) {
+            gapDays = countWorkDaysFunc(gapStart, gapEnd);
+          } else {
+            const diffTime = gapEnd - gapStart;
+            gapDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+          }
+          
+          if (gapDays > 0) {
+            interruptions.push({
+              afterTask: sortedTasks[i].name,
+              beforeTask: sortedTasks[i + 1].name,
+              start: gapStart,
+              end: gapEnd,
+              days: gapDays
+            });
+          }
+        }
+      }
+      
+      // Calculate total interruption time
+      const totalInterruptionDays = interruptions.reduce((sum, int) => sum + int.days, 0);
+      
+      // Calculate total project duration
+      const projectStart = new Date(sortedTasks[0].start);
+      const projectEnd = new Date(sortedTasks[sortedTasks.length - 1].end);
+      let totalProjectDays;
+      
+      if (useWorkDaysOnly) {
+        totalProjectDays = countWorkDaysFunc(projectStart, projectEnd);
+      } else {
+        const diffTime = projectEnd - projectStart;
+        totalProjectDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      }
+      
+      // Generate group statistics
+      const groups = [...new Set(regularTasks.map(t => t.group))];
+      const groupData = groups.map(group => {
+        const groupTasks = regularTasks.filter(t => t.group === group);
+        
+        // Calculate total days for this group
+        let groupTotalDays = 0;
+        groupTasks.forEach(task => {
+          const start = new Date(task.start);
+          const end = new Date(task.end);
+          
+          if (useWorkDaysOnly) {
+            groupTotalDays += countWorkDaysFunc(start, end);
+          } else {
+            const diffTime = end - start;
+            groupTotalDays += Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+          }
+        });
+        
+        // Find date range for this group
+        const groupTasksSorted = groupTasks.sort((a, b) => 
+          new Date(a.start) - new Date(b.start)
+        );
+        const groupStart = new Date(groupTasksSorted[0].start);
+        const groupEnd = new Date(groupTasksSorted[groupTasksSorted.length - 1].end);
+        
+        // Calculate span (including gaps within group)
+        let groupSpanDays;
+        if (useWorkDaysOnly) {
+          groupSpanDays = countWorkDaysFunc(groupStart, groupEnd);
+        } else {
+          const diffTime = groupEnd - groupStart;
+          groupSpanDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        }
+        
+        return {
+          name: group,
+          taskCount: groupTasks.length,
+          workDays: groupTotalDays,
+          spanDays: groupSpanDays,
+          startDate: groupStart,
+          endDate: groupEnd
+        };
+      });
+      
+      // Build the complete HTML for analysis tab
+      let analysisHTML = `
+        <div class="analysis-grid">
+          <!-- Total Summary -->
+          <div class="analysis-card">
+            <h3>⏱️ Zeitzusammenfassung</h3>
+            <div class="analysis-stat">
+              <span class="analysis-stat-label">Reine Arbeitszeit:</span>
+              <span class="analysis-stat-value">${totalWorkDays} Tage (${(totalWorkDays / 5).toFixed(1)} Wochen)</span>
+            </div>
+            <div class="analysis-stat">
+              <span class="analysis-stat-label">Unterbrechungen:</span>
+              <span class="analysis-stat-value">${totalInterruptionDays} Tage (${(totalInterruptionDays / 5).toFixed(1)} Wochen)</span>
+            </div>
+            <div class="analysis-stat">
+              <span class="analysis-stat-label">Gesamtprojektdauer:</span>
+              <span class="analysis-stat-value">${totalProjectDays} Tage (${(totalProjectDays / 5).toFixed(1)} Wochen)</span>
+            </div>
+          </div>
+          
+          <!-- Task Count -->
+          <div class="analysis-card">
+            <h3>📋 Aufgabenübersicht</h3>
+            <div class="analysis-stat">
+              <span class="analysis-stat-label">Aufgaben:</span>
+              <span class="analysis-stat-value">${regularTasks.length}</span>
+            </div>
+            <div class="analysis-stat">
+              <span class="analysis-stat-label">Meilensteine:</span>
+              <span class="analysis-stat-value">${milestones.length}</span>
+            </div>
+            <div class="analysis-stat">
+              <span class="analysis-stat-label">Unterbrechungen:</span>
+              <span class="analysis-stat-value">${interruptions.length}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Interruptions List -->
+        <div class="analysis-card">
+          <h3>⚠️ Unterbrechungen</h3>
+          <div class="interruptions-list">
+      `;
+      
+      if (interruptions.length === 0) {
+        analysisHTML += '<p style="color: var(--text-light); text-align: center; padding: 20px;">Keine Unterbrechungen gefunden</p>';
+      } else {
+        analysisHTML += interruptions.map((int, idx) => `
+          <div class="interruption-item">
+            <div class="interruption-header">Unterbrechung ${idx + 1}</div>
+            <div class="interruption-details">
+              <span>Nach: <strong>${int.afterTask}</strong></span>
+              <span>Vor: <strong>${int.beforeTask}</strong></span>
+              <span>Zeitraum: ${formatDate(int.start.toISOString().split('T')[0])} → ${formatDate(int.end.toISOString().split('T')[0])}</span>
+              <span class="interruption-duration">Dauer: ${int.days} Tage (${(int.days / 5).toFixed(1)} Wochen)</span>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      analysisHTML += `
+          </div>
+        </div>
+        
+        <!-- Group Statistics -->
+        <div class="analysis-card">
+          <h3>📦 Statistiken nach Gruppen</h3>
+          <div class="group-stats">
+      `;
+      
+      if (groupData.length === 0) {
+        analysisHTML += '<p style="color: var(--text-light); text-align: center; padding: 20px;">Keine Gruppen vorhanden</p>';
+      } else {
+        analysisHTML += groupData.map(group => `
+          <div class="group-item">
+            <div class="group-header">${group.name}</div>
+            <div class="group-stats-grid">
+              <div class="group-stat-item">
+                <span class="group-stat-label">Anzahl Aufgaben:</span>
+                <span class="group-stat-value">${group.taskCount}</span>
+              </div>
+              <div class="group-stat-item">
+                <span class="group-stat-label">Arbeitszeit:</span>
+                <span class="group-stat-value">${group.workDays} Tage (${(group.workDays / 5).toFixed(1)} Wo)</span>
+              </div>
+              <div class="group-stat-item">
+                <span class="group-stat-label">Zeitspanne:</span>
+                <span class="group-stat-value">${group.spanDays} Tage (${(group.spanDays / 5).toFixed(1)} Wo)</span>
+              </div>
+              <div class="group-stat-item">
+                <span class="group-stat-label">Start:</span>
+                <span class="group-stat-value">${formatDate(group.startDate.toISOString().split('T')[0])}</span>
+              </div>
+              <div class="group-stat-item">
+                <span class="group-stat-label">Ende:</span>
+                <span class="group-stat-value">${formatDate(group.endDate.toISOString().split('T')[0])}</span>
+              </div>
+              <div class="group-stat-item">
+                <span class="group-stat-label">Auslastung:</span>
+                <span class="group-stat-value">${((group.workDays / group.spanDays) * 100).toFixed(0)}%</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      analysisHTML += `
+          </div>
+        </div>
+      `;
+      
+      // Set the complete HTML in the analysis content
+      analysisContent.innerHTML = analysisHTML;
+    }
+    
+    // Helper function for counting work days in analysis
+    function countWorkDaysFunc(startDate, endDate) {
+      let count = 0;
+      let current = new Date(startDate);
+      while (current <= endDate) {
+        if (isWorkDay(current)) {
+          count++;
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      return count;
+    }
+    
+    // ==================== ZOOM CONTROLS ====================
+    function adjustZoom(axis, delta) {
+      if (axis === 'h') {
+        zoomH = Math.max(0.5, Math.min(4.0, zoomH + delta));
+      } else {
+        zoomV = Math.max(0.5, Math.min(4.0, zoomV + delta));
+      }
+      applyZoom();
+    }
+    
+    function resetZoom() {
+      zoomH = 1.0;
+      zoomV = 1.0;
+      applyZoom();
+    }
+    
+    function applyZoom() {
+      if (!currentChart) return;
+      
+      // Use stored original dimensions
+      const width = originalChartWidth * zoomH;
+      const height = originalChartHeight * zoomV;
+      
+      Plotly.relayout('gantt-chart', {
+        width: width,
+        height: height
+      });
+      
+      document.getElementById('zoom-h-level').textContent = Math.round(zoomH * 100) + '%';
+      document.getElementById('zoom-v-level').textContent = Math.round(zoomV * 100) + '%';
+    }
+    
+    // ==================== JSON IMPORT/EXPORT ====================
+    function saveJSON() {
+      const config = {
+        title: document.getElementById('project-title').value,
+        countWorkDays: document.getElementById('count-work-days').checked,
+        showTextOnBars: document.getElementById('show-text-on-bars').checked,
+        tasks: tasks
+      };
+      
+      const json = JSON.stringify(config, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gantt-config-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    function loadJSON() {
+      document.getElementById('file-input').click();
+    }
+    
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const config = JSON.parse(event.target.result);
+          
+          // Load configuration
+          if (config.title) {
+            document.getElementById('project-title').value = config.title;
+          }
+          if (config.countWorkDays !== undefined) {
+            document.getElementById('count-work-days').checked = config.countWorkDays;
+          }
+          if (config.showTextOnBars !== undefined) {
+            document.getElementById('show-text-on-bars').checked = config.showTextOnBars;
+          }
+          if (config.tasks) {
+            tasks = config.tasks;
+            renderTasksList();
+            updateEmptyStates();
+          }
+          
+          alert('Konfiguration erfolgreich geladen!');
+        } catch (error) {
+          alert('Fehler beim Laden der JSON-Datei: ' + error.message);
+        }
+      };
+      reader.readAsText(file);
+      
+      // Reset file input
+      e.target.value = '';
+    }
+    
+    // ==================== PDF EXPORT ====================
+    async function exportToPDF() {
+      const chartDiv = document.getElementById('chart');
+      
+      // Check if chart exists and has been rendered
+      if (!chartDiv || !chartDiv.querySelector('.js-plotly-plot') || chartDiv.children.length === 0) {
+        alert('Bitte generieren Sie zuerst ein Gantt-Diagramm!');
+        return;
+      }
+      
+      const exportBtn = document.getElementById('export-pdf-btn');
+      const originalText = exportBtn.textContent;
+      
+      try {
+        // Disable button and show loading
+        exportBtn.disabled = true;
+        exportBtn.textContent = '⏳ Exportiere...';
+        
+        // Capture the chart as an image
+        const canvas = await html2canvas(chartDiv, {
+          scale: 2, // Higher quality
+          backgroundColor: '#ffffff',
+          logging: false,
+          useCORS: true
+        });
+        
+        // Get image dimensions
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        
+        // Calculate PDF dimensions (A4 landscape)
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: imgWidth > imgHeight ? 'landscape' : 'portrait',
+          unit: 'px',
+          format: [imgWidth, imgHeight]
+        });
+        
+        // Add image to PDF
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        
+        // Generate filename
+        const projectTitle = document.getElementById('project-title').value || 'Gantt-Diagramm';
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `${projectTitle}_${date}.pdf`;
+        
+        // Download PDF
+        pdf.save(filename);
+        
+        alert('PDF erfolgreich exportiert!');
+      } catch (error) {
+        console.error('PDF Export Error:', error);
+        alert('Fehler beim Exportieren: ' + error.message);
+      } finally {
+        // Re-enable button
+        exportBtn.disabled = false;
+        exportBtn.textContent = originalText;
+      }
+    }
+    
+    // ==================== SAMPLE DATA ====================
+    function loadSampleData() {
+      tasks = [
+        {
+          type: 'milestone',
+          group: 'Start',
+          name: 'Projektbeginn',
+          start: '2025-11-01',
+          end: '2025-11-01',
+          duration: '',
+          tonnage: '',
+          text: ''
+        },
+        {
+          type: 'task',
+          group: 'Phase 1',
+          name: 'Planung',
+          start: '2025-11-01',
+          end: '2025-11-15',
+          duration: '10 AT',
+          tonnage: '',
+          text: 'Initialplanung'
+        },
+        {
+          type: 'task',
+          group: 'Phase 1',
+          name: 'Design',
+          start: '2025-11-10',
+          end: '2025-11-25',
+          duration: '10 AT',
+          tonnage: '',
+          text: 'Entwurf'
+        },
+        {
+          type: 'milestone',
+          group: 'Phase 1',
+          name: 'Design-Review',
+          start: '2025-11-25',
+          end: '2025-11-25',
+          duration: '',
+          tonnage: '',
+          text: ''
+        },
+        {
+          type: 'task',
+          group: 'Phase 2',
+          name: 'Entwicklung',
+          start: '2025-11-26',
+          end: '2025-12-20',
+          duration: '18 AT',
+          tonnage: '500',
+          text: 'Hauptentwicklung'
+        },
+        {
+          type: 'task',
+          group: 'Phase 2',
+          name: 'Testing',
+          start: '2025-12-15',
+          end: '2025-12-31',
+          duration: '10 AT',
+          tonnage: '',
+          text: 'QA-Phase'
+        }
+      ];
+      
+      document.getElementById('project-title').value = 'Beispielprojekt';
+    }
+    
+    // ==================== UTILITIES ====================
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    
+    function generateColors(count) {
+      const colors = [
+        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+        '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'
+      ];
+      return colors.slice(0, count);
+    }
+  </script>
+</body>
+</html>

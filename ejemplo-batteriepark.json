@@ -1,0 +1,217 @@
+{
+  "title": "Batteriepark Lausitz - Beispielprojekt",
+  "defaultState": "BB",
+  "showTextOnBars": true,
+  "tasks": [
+    {
+      "type": "milestone",
+      "group": "Projektstart",
+      "name": "Kick-off Meeting",
+      "start": "2025-11-03",
+      "end": "2025-11-03",
+      "duration": "",
+      "tonnage": "",
+      "text": ""
+    },
+    {
+      "type": "task",
+      "group": "Planung",
+      "name": "Standortanalyse",
+      "start": "2025-11-03",
+      "end": "2025-11-14",
+      "duration": "10 AT",
+      "tonnage": "",
+      "text": "Erste Planungsphase"
+    },
+    {
+      "type": "task",
+      "group": "Planung",
+      "name": "Genehmigungsverfahren",
+      "start": "2025-11-10",
+      "end": "2025-11-28",
+      "duration": "15 AT",
+      "tonnage": "",
+      "text": "Behörden & Anträge"
+    },
+    {
+      "type": "milestone",
+      "group": "Planung",
+      "name": "Genehmigung erhalten",
+      "start": "2025-11-28",
+      "end": "2025-11-28",
+      "duration": "",
+      "tonnage": "",
+      "text": ""
+    },
+    {
+      "type": "task",
+      "group": "Tiefbau",
+      "name": "Baustelleneinrichtung",
+      "start": "2025-12-01",
+      "end": "2025-12-05",
+      "duration": "5 AT",
+      "tonnage": "200",
+      "text": "Zufahrt & Container"
+    },
+    {
+      "type": "task",
+      "group": "Tiefbau",
+      "name": "Erdarbeiten",
+      "start": "2025-12-08",
+      "end": "2025-12-19",
+      "duration": "10 AT",
+      "tonnage": "5000",
+      "text": "Aushub Hauptfläche"
+    },
+    {
+      "type": "task",
+      "group": "Tiefbau",
+      "name": "Fundamente",
+      "start": "2025-12-16",
+      "end": "2026-01-10",
+      "duration": "18 AT",
+      "tonnage": "3500",
+      "text": "Betonfundamente"
+    },
+    {
+      "type": "milestone",
+      "group": "Tiefbau",
+      "name": "Tiefbau abgeschlossen",
+      "start": "2026-01-10",
+      "end": "2026-01-10",
+      "duration": "",
+      "tonnage": "",
+      "text": ""
+    },
+    {
+      "type": "task",
+      "group": "Elektrik",
+      "name": "Kabeltrassen verlegen",
+      "start": "2026-01-13",
+      "end": "2026-01-31",
+      "duration": "15 AT",
+      "tonnage": "800",
+      "text": "Hauptverkabelung"
+    },
+    {
+      "type": "task",
+      "group": "Elektrik",
+      "name": "Trafostation errichten",
+      "start": "2026-01-20",
+      "end": "2026-02-14",
+      "duration": "20 AT",
+      "tonnage": "1200",
+      "text": "Trafo 20kV/400V"
+    },
+    {
+      "type": "task",
+      "group": "Montage",
+      "name": "Container-Installation",
+      "start": "2026-02-02",
+      "end": "2026-02-20",
+      "duration": "15 AT",
+      "tonnage": "8000",
+      "text": "Batteriecontainer"
+    },
+    {
+      "type": "task",
+      "group": "Montage",
+      "name": "Wechselrichter montieren",
+      "start": "2026-02-16",
+      "end": "2026-03-06",
+      "duration": "15 AT",
+      "tonnage": "500",
+      "text": "Inverter-Systeme"
+    },
+    {
+      "type": "task",
+      "group": "Montage",
+      "name": "Kühlsystem installieren",
+      "start": "2026-02-23",
+      "end": "2026-03-13",
+      "duration": "15 AT",
+      "tonnage": "600",
+      "text": "HVAC-Anlagen"
+    },
+    {
+      "type": "milestone",
+      "group": "Montage",
+      "name": "Mechanische Fertigstellung",
+      "start": "2026-03-13",
+      "end": "2026-03-13",
+      "duration": "",
+      "tonnage": "",
+      "text": ""
+    },
+    {
+      "type": "task",
+      "group": "Inbetriebnahme",
+      "name": "Verkabelung & Anschluss",
+      "start": "2026-03-16",
+      "end": "2026-03-27",
+      "duration": "10 AT",
+      "tonnage": "",
+      "text": "Finale Verbindungen"
+    },
+    {
+      "type": "task",
+      "group": "Inbetriebnahme",
+      "name": "Systemtests",
+      "start": "2026-03-30",
+      "end": "2026-04-17",
+      "duration": "15 AT",
+      "tonnage": "",
+      "text": "Funktionsprüfungen"
+    },
+    {
+      "type": "task",
+      "group": "Inbetriebnahme",
+      "name": "Netzanschluss & Abnahme",
+      "start": "2026-04-13",
+      "end": "2026-04-24",
+      "duration": "10 AT",
+      "tonnage": "",
+      "text": "Netzbetreiber-Tests"
+    },
+    {
+      "type": "milestone",
+      "group": "Abschluss",
+      "name": "Inbetriebnahme",
+      "start": "2026-04-24",
+      "end": "2026-04-24",
+      "duration": "",
+      "tonnage": "",
+      "text": ""
+    },
+    {
+      "type": "task",
+      "group": "Abschluss",
+      "name": "Dokumentation",
+      "start": "2026-04-20",
+      "end": "2026-05-08",
+      "duration": "15 AT",
+      "tonnage": "",
+      "text": "As-built Pläne"
+    },
+    {
+      "type": "task",
+      "group": "Abschluss",
+      "name": "Schulung Personal",
+      "start": "2026-04-27",
+      "end": "2026-05-08",
+      "duration": "10 AT",
+      "tonnage": "",
+      "text": "Operator Training"
+    },
+    {
+      "type": "milestone",
+      "group": "Abschluss",
+      "name": "Projektabschluss",
+      "start": "2026-05-08",
+      "end": "2026-05-08",
+      "duration": "",
+      "tonnage": "",
+      "text": ""
+    }
+  ]
+}
