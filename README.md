@@ -1,115 +1,143 @@
-# 📊 Gantt Editor - Standalone HTML
+# 📊 Gantt-Diagramm HTML Editor
 
-## Descripción
+Ein interaktiver, eigenständiger HTML-Projektplaner zur Erstellung, Bearbeitung und Visualisierung von Gantt-Diagrammen mit Arbeitstagen und bundesweiten Feiertagen.
 
-**Gantt Editor** es una aplicación web completamente standalone (un solo archivo HTML) que permite crear, editar y visualizar diagramas de Gantt de manera interactiva, sin necesidad de Python ni servidor backend.
+## 📋 Übersicht
 
-## ✨ Características
+**Gantt Editor** ist eine vollständig eigenständige Webanwendung (eine einzige HTML-Datei), die es ermöglicht, Gantt-Diagramme interaktiv zu erstellen, zu bearbeiten und zu visualisieren, ohne Python oder einen Backend-Server zu benötigen.
 
-### 🎯 Gestión de Tareas
-- **Crear tareas** y **meilensteins** con formulario visual
-- **Editar** cualquier tarea haciendo clic sobre ella
-- **Eliminar** tareas individualmente
-- **Organizar** por grupos/fases
-- **Fechas de inicio y fin**
-- **Duración planificada** (opcional)
-- **Tonnage** (opcional)
-- **Texto personalizado** en barras
+Das Tool berechnet automatisch Arbeitstage (Montag-Freitag) unter Berücksichtigung der bundesweiten deutschen Feiertage.
 
-### 📈 Visualización
-- **Diagrama Gantt interactivo** con Plotly
-- **Zoom horizontal y vertical independiente**
-- **Línea de "Hoy"** para referencia temporal
-- **Slider de rango** para navegación temporal
-- **Colores por grupo** automáticos
-- **Tooltips informativos**
+## ✨ Hauptfunktionen
 
-### 💾 Persistencia
-- **Guardar configuración** como archivo JSON
-- **Cargar configuración** desde JSON
-- **Exportar/importar** proyectos completos
+### 🎯 Aufgabenverwaltung
+- **Aufgaben und Meilensteine erstellen** mit visuellem Formular
+- **Aufgaben bearbeiten** durch Klicken
+- **Aufgaben löschen** einzeln
+- **Organisation** nach Gruppen/Phasen
+- **Start- und Enddaten** mit automatischer Berechnung
+- **Arbeitstage-Berechnung** (Mo-Fr, ohne bundesweite Feiertage)
+- **Geplante Dauer** (optional)
+- **Tonnage** (optional, für Bauprojekte)
+- **Individueller Text** auf Balken
+- **Drag & Drop** zum Neuordnen von Aufgaben
 
-### 🎨 Interfaz
-- **Diseño moderno** y responsive
-- **Pestañas** para organizar: Tareas y Configuración
-- **Lista de tareas** con preview
-- **Estados vacíos** informativos
-- **Validación de formularios**
+### 📈 Visualisierung
+- **Interaktives Gantt-Diagramm** mit Plotly
+- **Unabhängiger horizontaler und vertikaler Zoom**
+- **Zeitraumregler** für zeitliche Navigation
+- **Automatische Farben** nach Gruppen
+- **Informative Tooltips** mit allen Aufgabendetails
+- **Responsive Design** für verschiedene Bildschirmgrößen
 
-## 🚀 Uso
+### 📊 Projektanalyse
+- **Automatische Berechnung** der reinen Arbeitszeit
+- **Erkennung von Unterbrechungen** zwischen Aufgaben
+- **Gesamtprojektdauer** mit Arbeitstagen und Wochen
+- **Statistiken nach Gruppen** mit Auslastung
+- **Detaillierte Unterbrechungsanalyse**
 
-### Método 1: Abrir directamente
+### 💾 Datenverwaltung
+- **Konfiguration als JSON speichern**
+- **Konfiguration aus JSON laden**
+- **Projekte exportieren/importieren**
+- **PDF-Export** des Gantt-Diagramms
+
+### 🎨 Benutzeroberfläche
+- **Modernes, responsives Design**
+- **Registerkartenbasierte Navigation**: Aufgaben, Analyse, Konfiguration
+- **Aufgabenliste** mit Vorschau
+- **Suchfunktion** für Aufgaben
+- **Leere Zustände** mit hilfreichen Informationen
+- **Formularvalidierung**
+
+### ⌨️ Tastaturkürzel
+- **Strg+S** - JSON speichern
+- **Strg+O** - JSON laden
+- **Strg+N** - Neue Aufgabe
+- **Strg+G** - Diagramm generieren
+- **Esc** - Modal schließen
+
+## 🚀 Verwendung
+
+### Methode 1: Direkt öffnen
 ```bash
-# Navegar a la carpeta
-cd gantt-editor
+# Zum Ordner navigieren
+cd Gantt-Diagramm-HTML
 
-# Abrir en el navegador
+# Im Browser öffnen
 xdg-open gantt-editor.html   # Linux
 open gantt-editor.html        # macOS
 start gantt-editor.html       # Windows
 ```
 
-### Método 2: Servidor local (opcional)
+### Methode 2: Lokaler Server (optional)
 ```bash
-# Python 3
+# Mit Python 3
 python3 -m http.server 8000
 
-# Luego abrir: http://localhost:8000/gantt-editor.html
+# Dann öffnen: http://localhost:8000/gantt-editor.html
 ```
 
-## 📋 Workflow Típico
+## 📋 Typischer Workflow
 
-1. **Añadir Tareas**
-   - Clic en "+ Aufgabe" o "★ Meilenstein"
-   - Rellenar formulario (grupo, nombre, fechas)
-   - Guardar
+1. **Aufgaben hinzufügen**
+   - Klicken Sie auf "+ Aufgabe" oder "★ Meilenstein"
+   - Füllen Sie das Formular aus (Gruppe, Name, Daten)
+   - Speichern
 
-2. **Configurar Proyecto**
-   - Ir a pestaña "Konfiguration"
-   - Establecer título del proyecto
-   - Seleccionar Bundesland por defecto
-   - Configurar visualización
+2. **Projekt konfigurieren**
+   - Gehen Sie zur Registerkarte "Konfiguration"
+   - Projekttitel festlegen
+   - Arbeitstage-Zählung aktivieren/deaktivieren
+   - Textanzeige auf Balken konfigurieren
 
-3. **Generar Diagrama**
-   - Volver a pestaña "Aufgaben"
-   - Clic en "🎨 Diagramm generieren"
-   - El diagrama aparece en el área derecha
+3. **Diagramm generieren**
+   - Zurück zur Registerkarte "Aufgaben"
+   - Klicken Sie auf "🎨 Diagramm generieren"
+   - Das Diagramm erscheint im rechten Bereich
 
-4. **Ajustar Visualización**
-   - Usar controles de zoom H/V
-   - Cambiar Bundesland en dropdown
-   - Hacer scroll para navegar
+4. **Analyse anzeigen**
+   - Wechseln Sie zur Registerkarte "Analyse"
+   - Automatisch generierte Statistiken anzeigen
+   - Unterbrechungen und Gruppenstatistiken prüfen
 
-5. **Guardar/Cargar**
-   - "💾 JSON speichern" → descargar configuración
-   - "📁 JSON laden" → cargar configuración previa
+5. **Visualisierung anpassen**
+   - Verwenden Sie die H/V-Zoom-Steuerungen
+   - Scrollen Sie zur Navigation
+   - Verwenden Sie den Zeitraumregler
 
-## 📁 Formato JSON
+6. **Speichern/Laden**
+   - "💾 JSON speichern" → Konfiguration herunterladen
+   - "📁 JSON laden" → Vorherige Konfiguration laden
+   - "📄 Als PDF exportieren" → Diagramm als PDF speichern
 
-Ejemplo de archivo JSON exportado:
+## 📁 JSON-Format
+
+Beispiel einer exportierten JSON-Datei:
 
 ```json
 {
-  "title": "Mein Projekt",
+  "title": "Batteriepark Lausitz - Beispielprojekt",
   "defaultState": "BB",
   "showTextOnBars": true,
   "tasks": [
     {
       "type": "task",
-      "group": "Phase 1",
-      "name": "Planung",
-      "start": "2025-11-01",
-      "end": "2025-11-15",
+      "group": "Planung",
+      "name": "Standortanalyse",
+      "start": "2025-11-03",
+      "end": "2025-11-14",
       "duration": "10 AT",
-      "tonnage": "500",
-      "text": "Initialplanung"
+      "tonnage": "",
+      "text": "Erste Planungsphase"
     },
     {
       "type": "milestone",
-      "group": "Phase 1",
-      "name": "Kick-off",
-      "start": "2025-11-01",
-      "end": "2025-11-01",
+      "group": "Projektstart",
+      "name": "Kick-off Meeting",
+      "start": "2025-11-03",
+      "end": "2025-11-03",
       "duration": "",
       "tonnage": "",
       "text": ""
@@ -118,106 +146,157 @@ Ejemplo de archivo JSON exportado:
 }
 ```
 
-## 🎨 Controles del Diagrama
+### JSON-Felder
+
+- **title**: Projekttitel
+- **defaultState**: Bundesland-Code (momentan nur für Kompatibilität)
+- **showTextOnBars**: Boolean - Text auf Balken anzeigen
+- **tasks**: Array von Aufgaben/Meilensteinen
+  - **type**: "task" oder "milestone"
+  - **group**: Gruppenname/Phase
+  - **name**: Aufgabenname
+  - **start**: Startdatum (YYYY-MM-DD)
+  - **end**: Enddatum (YYYY-MM-DD)
+  - **duration**: Geplante Dauer (z.B. "10 AT")
+  - **tonnage**: Tonnage in Tonnen (optional)
+  - **text**: Text auf Balken (optional)
+
+## 🎨 Diagramm-Steuerungen
 
 ### Zoom
-- **H +/-**: Aumentar/reducir ancho horizontal (timeline)
-- **V +/-**: Aumentar/reducir altura vertical (barras)
-- **⟲**: Reset a 100%
+- **H +/-**: Horizontale Breite erhöhen/verringern (Zeitachse)
+- **V +/-**: Vertikale Höhe erhöhen/verringern (Balken)
+- **⟲**: Zurücksetzen auf 100%
 
-### Navegación
-- **Scroll horizontal**: Navegar cuando zoom H > 100%
-- **Scroll vertical**: Ver más tareas
-- **Range slider**: Ajustar ventana temporal
+### Navigation
+- **Horizontales Scrollen**: Navigieren bei H-Zoom > 100%
+- **Vertikales Scrollen**: Mehr Aufgaben anzeigen
+- **Zeitraumregler**: Zeitfenster anpassen
 
-### Interacción Plotly
-- **Hover**: Ver detalles de tarea
-- **Click leyenda**: Mostrar/ocultar grupos
-- **Doble click**: Reset zoom de Plotly
-- **Box select**: Seleccionar área
+### Plotly-Interaktion
+- **Hover**: Aufgabendetails anzeigen
+- **Klick auf Legende**: Gruppen ein-/ausblenden
+- **Doppelklick**: Plotly-Zoom zurücksetzen
+- **Box-Auswahl**: Bereich auswählen
 
-## 🔧 Personalización
+## 🔧 Anpassung
 
-### Colores
-Edita la función `generateColors()` en el JavaScript:
+### Farben
+Bearbeiten Sie die Funktion `generateColors()` im JavaScript:
 ```javascript
 const colors = [
-  '#3b82f6',  // Azul
-  '#10b981',  // Verde
-  '#f59e0b',  // Amarillo
-  // ... añadir más
+  '#3b82f6',  // Blau
+  '#10b981',  // Grün
+  '#f59e0b',  // Gelb
+  // ... weitere hinzufügen
 ];
 ```
 
-### Altura de barras
-Ajusta el cálculo en `generateChart()`:
+### Balkenhöhe
+Passen Sie die Berechnung in `generateChart()` an:
 ```javascript
-height: Math.max(500, tasks.length * 30)  // 30px por tarea
+height: Math.max(500, tasks.length * 30)  // 30px pro Aufgabe
 ```
 
-### Bundesländer
-Los estados alemanes están hardcodeados. Para cambiar, edita los `<select>` en el HTML.
+## ⚙️ Arbeitstage-Berechnung
 
-## 🆚 Diferencias con la versión Python
+Das Tool berechnet Arbeitstage wie folgt:
 
-| Característica | Python | HTML Standalone |
-|---|---|---|
-| **Cálculo Arbeitstage** | ✅ Sí (holidays lib) | ❌ No |
-| **Feiertage por Bundesland** | ✅ Sí | ❌ No |
-| **Editor visual** | ❌ No | ✅ Sí |
-| **Interfaz web** | ❌ CLI | ✅ GUI |
-| **Dependencias** | 🐍 Python + libs | 🌐 Solo navegador |
-| **Persistencia** | 📝 Python scripts | 💾 JSON files |
-| **Portabilidad** | ⚙️ Necesita Python | 🚀 100% portable |
+- **Nur Montag-Freitag** werden gezählt
+- **Bundesweite deutsche Feiertage** werden ausgeschlossen:
+  - Neujahr (1. Januar)
+  - Karfreitag (beweglich)
+  - Ostermontag (beweglich)
+  - Tag der Arbeit (1. Mai)
+  - Christi Himmelfahrt (beweglich)
+  - Pfingstmontag (beweglich)
+  - Tag der Deutschen Einheit (3. Oktober)
+  - 1. Weihnachtsfeiertag (25. Dezember)
+  - 2. Weihnachtsfeiertag (26. Dezember)
 
-## ⚠️ Limitaciones
+**Hinweis**: Bundeslandspezifische Feiertage werden momentan nicht berücksichtigt.
 
-1. **No calcula Arbeitstage reales** (no tiene librería holidays)
-   - Las fechas son calendario, no laborables
-   - El campo "duration" es solo informativo
+## 📊 Analyse-Funktionen
 
-2. **No genera sombreado de fines de semana**
-   - La versión Python sí lo hace
+Die automatische Projektanalyse umfasst:
 
-3. **No muestra festivos**
-   - La versión Python marca los festivos del Bundesland
+### Zeitzusammenfassung
+- Reine Arbeitszeit (in Tagen und Wochen)
+- Gesamte Unterbrechungszeit
+- Gesamtprojektdauer
 
-4. **Almacenamiento local**
-   - No hay base de datos, solo archivos JSON
+### Aufgabenübersicht
+- Anzahl der Aufgaben
+- Anzahl der Meilensteine
+- Anzahl der Unterbrechungen
 
-## 💡 Casos de Uso Ideales
+### Unterbrechungen
+- Detaillierte Liste aller Lücken zwischen Aufgaben
+- Dauer jeder Unterbrechung
+- Aufgaben vor und nach jeder Unterbrechung
 
-✅ **Ideal para:**
-- Planificación rápida sin instalaciones
-- Presentaciones y demos
-- Compartir con usuarios sin Python
-- Edición visual de proyectos
-- Prototipado rápido
+### Gruppenstatistiken
+- Anzahl der Aufgaben pro Gruppe
+- Arbeitszeit pro Gruppe
+- Zeitspanne pro Gruppe
+- Start- und Enddatum
+- Auslastung (%)
 
-❌ **No ideal para:**
-- Cálculos precisos de días laborables
-- Integración con sistemas de festivos
-- Automatización con scripts
-- Procesamiento de datos complejos
+## 💡 Anwendungsfälle
 
-## 🔮 Futuras Mejoras
+### ✅ Ideal für:
+- Schnelle Projektplanung ohne Installationen
+- Präsentationen und Demos
+- Teilen mit Benutzern ohne Python
+- Visuelle Projektbearbeitung
+- Schnelles Prototyping
+- Bauprojekte mit Tonnage-Tracking
 
-Ideas para extender el editor:
+### ⚠️ Eingeschränkt für:
+- Bundeslandspezifische Feiertage
+- Komplexe Ressourcenplanung
+- Automatisierung mit Skripten
+- Backend-Integration
 
-- [ ] Integrar API de festivos (holiday API)
-- [ ] Dependencias entre tareas
-- [ ] Recursos asignados
-- [ ] Gantt de recursos
-- [ ] Exportar a PDF/imagen
-- [ ] Plantillas de proyectos
-- [ ] Modo colaborativo (con backend)
-- [ ] Cálculo de ruta crítica
-- [ ] Integración con calendarios
+## 📦 Projektdateien
 
-## 📞 Soporte
+```
+Gantt-Diagramm-HTML/
+├── gantt-editor.html          # Hauptanwendung (alles in einer Datei)
+├── ejemplo-batteriepark.json  # Beispielprojekt
+├── README.md                  # Diese Datei
+└── LICENSE                    # Lizenz
+```
 
-Este es un proyecto standalone. Para la versión completa con cálculo de Arbeitstage, usa la versión Python principal del proyecto.
+## 🔮 Zukünftige Erweiterungen
 
-## 📄 Licencia
+Ideen zur Erweiterung des Editors:
 
-Mismo que el proyecto principal Gantt-Diagramm.
+- [ ] Bundeslandspezifische Feiertage
+- [ ] Abhängigkeiten zwischen Aufgaben
+- [ ] Ressourcenzuordnung
+- [ ] Ressourcen-Gantt
+- [ ] Verbesserte PDF-Export-Optionen
+- [ ] Projektvorlagen
+- [ ] Kollaborativer Modus (mit Backend)
+- [ ] Kritischer Pfad-Berechnung
+- [ ] Kalenderintegration
+
+## �️ Technologie
+
+- **HTML5** mit eingebettetem CSS und JavaScript
+- **Plotly.js** für interaktive Diagramme
+- **html2canvas** und **jsPDF** für PDF-Export
+- Keine externen Abhängigkeiten erforderlich (CDN-Links)
+
+## 📄 Lizenz
+
+Siehe LICENSE-Datei im Projektverzeichnis.
+
+## 🤝 Beitragen
+
+Beiträge sind willkommen! Fühlen Sie sich frei, Issues zu öffnen oder Pull Requests einzureichen.
+
+---
+
+**Hinweis**: Dieses Tool ist für die Projektplanung mit deutschen Arbeitstagen und bundesweiten Feiertagen optimiert.
