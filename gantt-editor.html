@@ -1659,9 +1659,13 @@
             hovertemplate: '<b>%{y}</b><br>' +
                           'Gruppe: ' + group + '<br>' +
                           'Start: %{base|%d.%m.%Y}<br>' +
-                          'Ende: %{customdata}<br>' +
+                          'Ende: %{customdata[0]}<br>' +
+                          'Dauer: %{customdata[1]}<br>' +
                           '<extra></extra>',
-            customdata: groupTasks.map(t => formatDate(t.end))
+            customdata: groupTasks.map(t => [
+              formatDate(t.end),
+              t.duration ? t.duration : '–'
+            ])
           });
         }
       });
@@ -1687,7 +1691,11 @@
       
       // Layout
       const layout = {
-        title: document.getElementById('project-title').value,
+        title: {
+          text: document.getElementById('project-title').value,
+          x: 0,
+          xanchor: 'left'
+        },
         xaxis: {
           type: 'date',
           title: 'Datum',
@@ -1700,7 +1708,9 @@
           autorange: 'reversed',
           title: '',
           showgrid: true,
-          gridcolor: '#f3f4f6'
+          gridcolor: '#f3f4f6',
+          automargin: true,
+          ticklabeloverflow: 'allow'
         },
         hoverlabel: {
           bgcolor: '#1f2937',
@@ -1713,13 +1723,13 @@
         },
         legend: {
           orientation: 'h',
-          yanchor: 'bottom',
-          y: 1.02,
-          xanchor: 'right',
-          x: 1
+          yanchor: 'top',
+          y: -0.15,
+          xanchor: 'left',
+          x: 0
         },
-        margin: { l: 150, r: 20, t: 80, b: 40 },
-        height: Math.max(500, tasks.length * 30)
+        margin: { l: 140, r: 30, t: 100, b: 90 },
+        height: Math.max(520, tasks.length * 34)
       };
       
       const config = {
@@ -2105,10 +2115,12 @@
     
     // ==================== PDF EXPORT ====================
     async function exportToPDF() {
-      const chartDiv = document.getElementById('chart');
+      const chartContainer = document.querySelector('.chart-container');
+      const ganttChart = document.getElementById('gantt-chart');
+      const hasRenderedPlot = ganttChart && ganttChart.querySelector('.main-svg');
       
       // Check if chart exists and has been rendered
-      if (!chartDiv || !chartDiv.querySelector('.js-plotly-plot') || chartDiv.children.length === 0) {
+      if (!chartContainer || !ganttChart || !hasRenderedPlot) {
         alert('Bitte generieren Sie zuerst ein Gantt-Diagramm!');
         return;
       }
@@ -2122,7 +2134,7 @@
         exportBtn.textContent = '⏳ Exportiere...';
         
         // Capture the chart as an image
-        const canvas = await html2canvas(chartDiv, {
+        const canvas = await html2canvas(chartContainer, {
           scale: 2, // Higher quality
           backgroundColor: '#ffffff',
           logging: false,
